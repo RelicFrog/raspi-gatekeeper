@@ -1,0 +1,93 @@
+#
+# terraform, compiled files
+# --
+
+*.tfstate
+*.tfstate.backup
+.build-harness
+build-harness
+
+#
+# temporary terraform files
+# --
+*.tfvars
+!*account.tfvars
+.terraform
+tfplan
+terraform.tfstate.d/*
+bucket*.json
+
+#
+# VSCode project files
+# --
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+#
+# IntelliJ project files
+# --
+
+.idea/*
+out
+gen
+*.iml
+
+#
+# ignore all previously mounted shared sub folders
+# --
+
+*/share/*
+*/volumes/*
+
+#
+# keep all gitkeep files
+# --
+
+!**/.gitkeep
+
+#
+# ignore logs and tmp file dumps
+# --
+
+*.tmp
+*.log
+.DS_Store
+
+#
+# local generated userdata shell scripts
+# --
+
+userdata*.sh
+
+#
+# local letsencrypt path
+# --
+
+.letsencrypt
+
+#
+# local archives
+# --
+
+*.zip
+*.rar
+*.gzip
+*.7z
+*.tar
+
+#
+# local jenkins config
+# --
+config.xml
+
+#
+# golang related stuff
+# --
+# Test binary, built with `go test -c`
+*.test
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+*/vendor/*
