@@ -43,14 +43,14 @@ Please make sure that an executable iptables environment already exists on your 
 
 Clone this repository into your /opt directory, set exec bit and create a symbolic link to /usr/local/sbin
 
-`cd /opt ; git clone git@github.com:RelicFrog/raspi-gatekeeper.git && chmod +x ./raspi-gatekeeper/gatekeeper.sh`
-`ln -sf /opt/raspi-gatekeeper/gatekeeper.sh /usr/local/sbin/gatekeeper`
+`cd /opt ; sudo git clone git@github.com:RelicFrog/raspi-gatekeeper.git && sudo chmod +x ./raspi-gatekeeper/gatekeeper.sh`
+`sudo ln -sf /opt/raspi-gatekeeper/gatekeeper.sh /usr/local/sbin/gatekeeper`
 
 ## Commands
 
-* start firewall: `gatekeeper start`
-* stop firewall: `gatekeeper stop`
-* restart firewall: `gatekeeper restart`
+* start firewall: `sudo gatekeeper start`
+* stop firewall: `sudo gatekeeper stop`
+* restart firewall: `sudo gatekeeper restart`
 
 ## Rules
 

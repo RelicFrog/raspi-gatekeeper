@@ -12,7 +12,7 @@
 # ::   :::   :: ::::   :: ::::   ::   ::: :::   ::       ::   :::  ::::: ::   ::: ::::
 #  :   : :  : :: ::   : :: : :  :     :: :: :   :         :   : :   : :  :    :: :: :
 #
-# gatekeeper firewall control script v1.0.0
+# gatekeeper firewall control script v1.0.1
 #
 #
 # Provides:          iptables
@@ -24,14 +24,41 @@
 # Description:       raspberry pi 4 hardening script for iptables (v1.0.0)
 ### END INIT INFO
 
-MY_SERVER_IP4="$(ip addr show eth0 | grep 'inet ' | cut -f2 | awk '{ print $2}')"
-MY_SERVER_NETWORK="lo eth0 wlan0"
-MY_HOST_IP4_LOCALS="127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 10.0.0.0/8"
-MY_LOG_PREFIX_SSH="[gatekeeper/found/SSH] -- "
-MY_LOG_PREFIX_INP="[gatekeeper/block/INP] -- "
-MY_LOG_PREFIX_FWD="[gatekeeper/block/OUT] -- "
-MY_LOG_PREFIX_OUT="[gatekeeper/block/FWD] -- "
-Q9_DNS_SERVER="9.9.9.9 149.112.112.112"
+rf_error () {
+    if [ -n "$1" ]; then
+      echo "$1"
+    else
+      echo "an unknown error occurred."
+    fi
+    exit 1
+}
+
+init() {
+
+  if [ $EUID -ne 0 ]; then
+    rf_error "[ALERT] gatekeeper script must be run as root (current UID: $EUID)! <Aborting>"
+  fi
+
+  hash iptables 2>/dev/null  || { rf_error "[ALERT] gatekeeper script requires the iptables command but it's not available! <Aborting>"; }
+  hash ip6tables 2>/dev/null || { rf_error "[ALERT] gatekeeper script requires the ip6tables command but it's not available! <Aborting>"; }
+  hash ip 2>/dev/null        || { rf_error "[ALERT] gatekeeper script requires the IP command but it's not available! <Aborting>"; }
+
+  MY_VERSION="1.0.1"
+  MY_SERVER_IP4_ETH_0="$(ip addr show eth0  | grep 'inet ' | cut -f2 | awk '{ print $2}')"
+  MY_SERVER_IP4_WLN_0="$(ip addr show wlan0 | grep 'inet ' | cut -f2 | awk '{ print $2}')"
+  MY_SERVER_NETWORK="lo eth0 wlan0"
+  MY_HOST_IP4_LOCALS="127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 10.0.0.0/8"
+  MY_LOG_PREFIX_SSH="[gatekeeper/found/SSH] -- "
+  MY_LOG_PREFIX_INP="[gatekeeper/block/INP] -- "
+  MY_LOG_PREFIX_FWD="[gatekeeper/block/OUT] -- "
+  MY_LOG_PREFIX_OUT="[gatekeeper/block/FWD] -- "
+  Q9_DNS_SERVER="9.9.9.9 149.112.112.112"
+
+  echo "Gatekeeper, Raspberry Pi Firewall Control Script v${MY_VERSION}"
+  echo "created by RelicFrog team + friends"
+
+  set -o errexit
+}
 
 configure_network() {
 
@@ -73,7 +100,8 @@ configure_input_chain() {
     ip6tables -A INPUT -p udp --dport 53 -j ACCEPT # DNS/UDP
 
     # explicit allow pi-hole incoming dns requests (netbios, dns, m-dns ...)
-    iptables -A INPUT -s "${MY_SERVER_IP4}" -j ACCEPT
+    [ -z "$MY_SERVER_IP4_ETH_0" ] && echo "ignore eth0, missing ipv4 notation"  || iptables -A INPUT -s "${MY_SERVER_IP4_ETH_0}" -j ACCEPT
+    [ -z "$MY_SERVER_IP4_WLN_0" ] && echo "ignore wlan0, missing ipv4 notation" || iptables -A INPUT -s "${MY_SERVER_IP4_WLN_0}" -j ACCEPT
     for ip in ${Q9_DNS_SERVER}
     do
         echo "allow DNS lookups (tcp, udp port 53) from q9-server '${ip}'"
@@ -110,7 +138,7 @@ configure_output_chain() {
 
     # allow outgoing ssh from our network baseline
     iptables -A OUTPUT -p tcp --sport 22 -m conntrack --ctstate ESTABLISHED -j ACCEPT
-    # explicit allow pi-hole outgoin dns requests (netbios, dns, m-dns ...)
+    # explicit allow pi-hole outgoing dns requests (netbios, dns, m-dns ...)
     for ip in ${Q9_DNS_SERVER}
     do
         echo "allow DNS lookups (tcp, udp port 53) to q9-server '${ip}'"
@@ -294,25 +322,23 @@ start() {
     persist
 }
 
-show() {
-
-    iptables -L -v
-}
+init
 
 case "$1" in
     start)
-        echo "firewall [start]";
+        echo "gatekeeper [start]";
         start
     ;;
     stop)
-        echo "firewall [stop]";
+        echo "gatekeeper [stop]";
         stop
     ;;
     restart)
-        echo "firewall [restart]";
-        stop
-        start
+        echo "gatekeeper [restart]";
+        stop; start
     ;;
+    *)
+        echo "usage: $ sudo gatekeeper start|stop|restart"
 esac
 
 exit 0;
