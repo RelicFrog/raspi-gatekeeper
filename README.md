@@ -1,7 +1,7 @@
-# RelicFrog Raspy PI "Gatekeeper" Firewall
+# RelicFrog's Raspberry PI "Gatekeeper" Implementation
 
 [![Software License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![System Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](VERSION)
+[![System Version](https://img.shields.io/badge/Version-1.0.2-blue.svg)](VERSION)
 [![Documentation](https://img.shields.io/badge/DOC-link-green.svg)](https://google.com)
 
 _The current documentation in this repository is not yet final and will be adjusted and extended over the next commits according to the extended functionality of this Raspberry PI Firewall configuration script._
@@ -43,8 +43,12 @@ Please make sure that an executable iptables environment already exists on your 
 
 Clone this repository into your /opt directory, set exec bit and create a symbolic link to /usr/local/sbin
 
-`cd /opt ; sudo git clone git@github.com:RelicFrog/raspi-gatekeeper.git && sudo chmod +x ./raspi-gatekeeper/gatekeeper.sh`
-`sudo ln -sf /opt/raspi-gatekeeper/gatekeeper.sh /usr/local/sbin/gatekeeper`
+```bash
+cd /opt
+sudo git clone git@github.com:RelicFrog/raspi-gatekeeper.git
+sudo chmod +x ./raspi-gatekeeper/gatekeeper.sh
+sudo ln -sf /opt/raspi-gatekeeper/gatekeeper.sh /usr/local/sbin/gatekeeper
+```
 
 ## Commands
 
@@ -58,35 +62,35 @@ The current rules are primarily to be understood as basic sets of rules and can 
 
 ### Input
 
-| Port(s)          | Description |
-|------------------|-------------|
-| `22`             | allow SSH access to your system |
-| `53/tcp`         | allow DNS by tcp access to your system |
-| `53/udp`         | allow DNS by udp access to your system |
+| Port(s)          | Description                                                                  |
+|------------------|------------------------------------------------------------------------------|
+| `22`             | allow SSH access to your system                                              |
+| `53/tcp`         | allow DNS by tcp access to your system                                       |
+| `53/udp`         | allow DNS by udp access to your system                                       |
 | `137,138,139`    | allow NetBIOS Name Service, Datagram Service, Session Service to your system |
-| `953,5353,57621` | allow mDNS/DNS RNDC Service to your system |
-| `80,443`         | allow webserver (http/https) access to your system |
-| `67,68,69`       | allow DHCP service access to your system |
-| `icmp/multicast` | allow local network ICMP service ping to your system |
+| `953,5353,57621` | allow mDNS/DNS RNDC Service to your system                                   |
+| `80,443`         | allow webserver (http/https) access to your system                           |
+| `67,68,69`       | allow DHCP service access to your system                                     |
+| `icmp/multicast` | allow local network ICMP service ping to your system                         |
 
 ### Output
 
-| Port(s)          | Description |
-|------------------|-------------|
-| `22`             | allow SSH access from your system |
-| `53/tcp`         | allow DNS by tcp access from your system |
-| `53/udp`         | allow DNS by udp access from your system |
+| Port(s)          | Description                                            |
+|------------------|--------------------------------------------------------|
+| `22`             | allow SSH access from your system                      |
+| `53/tcp`         | allow DNS by tcp access from your system               |
+| `53/udp`         | allow DNS by udp access from your system               |
 | `icmp/multicast` | allow local network ICMP service ping from your system |
 
 ### Forward
 
-| Port(s)          | Description |
-|------------------|-------------|
-| `53/tcp`         | forward DNS by tcp access through your system |
-| `53/udp`         | allow DNS by udp access through your system |
-| `80,443`         | allow webserver (http/https) access through your system |
-| `123`            | allow NTP access through your system |
-| `587`            | allow submission access through your system |
+| Port(s)  | Description                                             |
+|----------|---------------------------------------------------------|
+| `53/tcp` | forward DNS by tcp access through your system           |
+| `53/udp` | allow DNS by udp access through your system             |
+| `80,443` | allow webserver (http/https) access through your system |
+| `123`    | allow NTP access through your system                    |
+| `587`    | allow submission access through your system             |
 
 ## Contribution
 
