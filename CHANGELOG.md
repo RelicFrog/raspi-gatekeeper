@@ -4,9 +4,25 @@ All notable changes of RelicFrog Raspy PI Firewall release series are documented
 
 _This RelicFrog/Gatekeeper project changelog documentation start with version 1.0.0 (2020-05-14)_
 
+## [1.0.2],2022-05-26:
+_current_
+
+### Fixed
+
+* sh/bash shebang switch
+* remove q9-ns whitelist rule-sets
+
+### Added
+
+* new iptables-persistence pre-flight-check
+* ansi logo output
+
+### Changes
+
+* minor refactoring
+
 
 ## [1.0.1], 2020-05-15:
-_current_
 
 ### Added
 

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ### BEGIN INIT INFO
 #
 # @@@@@@@   @@@@@@@@  @@@       @@@   @@@@@@@  @@@@@@@@  @@@@@@@    @@@@@@    @@@@@@@@
@@ -12,7 +12,7 @@
 # ::   :::   :: ::::   :: ::::   ::   ::: :::   ::       ::   :::  ::::: ::   ::: ::::
 #  :   : :  : :: ::   : :: : :  :     :: :: :   :         :   : :   : :  :    :: :: :
 #
-# gatekeeper firewall control script v1.0.1
+# gatekeeper firewall control script v1.0.2
 #
 #
 # Provides:          iptables
@@ -21,7 +21,7 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Firewall Script
-# Description:       raspberry pi 4 hardening script for iptables (v1.0.0)
+# Description:       raspberry pi 4 hardening script using iptables/iptables-persist/fail2ban
 ### END INIT INFO
 
 rf_error () {
@@ -35,15 +35,23 @@ rf_error () {
 
 init() {
 
+  MY_VERSION="1.0.2"
+  MY_LOGO=$(cat meta/logo-v1.asc)
+  echo -e "${MY_LOGO}\n";
+  echo -e "GateKeeper based network access control script v${MY_VERSION} for RaspberryPi(IV)"
+  echo -e "Created by Team RelicFrog (c) 2020-2022 MIT licensed open source project"
+  echo -e "https://github.com/RelicFrog/raspi-gatekeeper"
+
   if [ $EUID -ne 0 ]; then
     rf_error "[ALERT] gatekeeper script must be run as root (current UID: $EUID)! <Aborting>"
   fi
 
-  hash iptables 2>/dev/null  || { rf_error "[ALERT] gatekeeper script requires the iptables command but it's not available! <Aborting>"; }
-  hash ip6tables 2>/dev/null || { rf_error "[ALERT] gatekeeper script requires the ip6tables command but it's not available! <Aborting>"; }
-  hash ip 2>/dev/null        || { rf_error "[ALERT] gatekeeper script requires the IP command but it's not available! <Aborting>"; }
+  hash iptables 2>/dev/null       || { rf_error "[ALERT] gatekeeper script requires the iptables command but it's not available! <Aborting>"; }
+  hash ip6tables 2>/dev/null      || { rf_error "[ALERT] gatekeeper script requires the ip6tables command but it's not available! <Aborting>"; }
+  hash iptables-save 2>/dev/null  || { rf_error "[ALERT] gatekeeper script requires the iptables-save command but it's not available! <Aborting>"; }
+  hash ip6tables-save 2>/dev/null || { rf_error "[ALERT] gatekeeper script requires the ip6tables-save command but it's not available! <Aborting>"; }
+  hash ip 2>/dev/null             || { rf_error "[ALERT] gatekeeper script requires the IP command but it's not available! <Aborting>"; }
 
-  MY_VERSION="1.0.1"
   MY_SERVER_IP4_ETH_0="$(ip addr show eth0  | grep 'inet ' | cut -f2 | awk '{ print $2}')"
   MY_SERVER_IP4_WLN_0="$(ip addr show wlan0 | grep 'inet ' | cut -f2 | awk '{ print $2}')"
   MY_SERVER_NETWORK="lo eth0 wlan0"
@@ -52,10 +60,7 @@ init() {
   MY_LOG_PREFIX_INP="[gatekeeper/block/INP] -- "
   MY_LOG_PREFIX_FWD="[gatekeeper/block/OUT] -- "
   MY_LOG_PREFIX_OUT="[gatekeeper/block/FWD] -- "
-  Q9_DNS_SERVER="9.9.9.9 149.112.112.112"
-
-  echo "Gatekeeper, Raspberry Pi Firewall Control Script v${MY_VERSION}"
-  echo "created by RelicFrog team + friends"
+  # Q9_DNS_SERVER="9.9.9.9 149.112.112.112"
 
   set -o errexit
 }
@@ -66,19 +71,19 @@ configure_network() {
 
     for adapter in ${MY_SERVER_NETWORK}
     do
-        echo "allow outgoing network traffic for '${adapter}'"
+        echo "[ALLOW] outgoing network traffic for '${adapter}'"
         iptables -A OUTPUT -o "${adapter}" -j ACCEPT
     done
 
     for ip in ${MY_HOST_IP4_LOCALS}
     do
-        echo "reject lo-traffic for non-loopback interface (lo0) '${ip}'"
+        echo "[REJECT] lo-traffic for non-loop-back interface (lo0) '${ip}'"
         iptables -A INPUT  -d "${ip}" -j REJECT
         iptables -A OUTPUT -d "${ip}" -j REJECT
     done
 }
 
-configure_postrouting() {
+configure_post_routing() {
 
     iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 }
@@ -99,18 +104,18 @@ configure_input_chain() {
     ip6tables -A INPUT -p tcp --dport 53 -j ACCEPT # DNS/TCP
     ip6tables -A INPUT -p udp --dport 53 -j ACCEPT # DNS/UDP
 
-    # explicit allow pi-hole incoming dns requests (netbios, dns, m-dns ...)
-    [ -z "$MY_SERVER_IP4_ETH_0" ] && echo "ignore eth0, missing ipv4 notation"  || iptables -A INPUT -s "${MY_SERVER_IP4_ETH_0}" -j ACCEPT
-    [ -z "$MY_SERVER_IP4_WLN_0" ] && echo "ignore wlan0, missing ipv4 notation" || iptables -A INPUT -s "${MY_SERVER_IP4_WLN_0}" -j ACCEPT
-    for ip in ${Q9_DNS_SERVER}
-    do
-        echo "allow DNS lookups (tcp, udp port 53) from q9-server '${ip}'"
-        iptables -A INPUT  -s "${ip}" -j ACCEPT
-    done
+    # explicit allow pi-hole incoming dns requests (net-bios, dns, m-dns ...)
+    [ -z "$MY_SERVER_IP4_ETH_0" ] && echo "[IGNORE] eth0, missing ipv4 notation"  || iptables -A INPUT -s "${MY_SERVER_IP4_ETH_0}" -j ACCEPT
+    [ -z "$MY_SERVER_IP4_WLN_0" ] && echo "[IGNORE] wlan0, missing ipv4 notation" || iptables -A INPUT -s "${MY_SERVER_IP4_WLN_0}" -j ACCEPT
+    # for ip in ${Q9_DNS_SERVER}
+    # do
+    #     echo "[ALLOW] DNS lookups (tcp, udp port 53) from q9-server '${ip}'"
+    #     iptables -A INPUT -s "${ip}" -j ACCEPT
+    # done
 
     iptables -A INPUT -p udp -m multiport --dport 137,138,139 -j ACCEPT # NetBIOS Name Service, Datagram Service, Session Service
     iptables -A INPUT -p tcp -m multiport --dport 80,443 -j ACCEPT # HTTP/HTTPS
-    iptables -A INPUT -p tcp -m multiport --dport 953,5353,57621 -j ACCEPT # mDNS/DNS RNDC Service
+    iptables -A INPUT -p tcp -m multiport --dport 953,5353,57621 -j ACCEPT # mDNS/DNS/rndc Service
     iptables -A INPUT -p udp -m multiport --dport 67,68,69 -j ACCEPT # DHCP
 
     iptables -A INPUT -p icmp --icmp-type echo-reply -j ACCEPT # ping reply
@@ -119,7 +124,7 @@ configure_input_chain() {
 
     ip6tables -A INPUT -p udp -m multiport --dport 137,138,139 -j ACCEPT # NetBIOS Name Service, Datagram Service, Session Service
     ip6tables -A INPUT -p tcp -m multiport --dport 80,443 -j ACCEPT # HTTP/HTTPS
-    ip6tables -A INPUT -p tcp -m multiport --dport 953,5353,57621 -j ACCEPT # mDNS/DNS RNDC Service
+    ip6tables -A INPUT -p tcp -m multiport --dport 953,5353,57621 -j ACCEPT # mDNS/DNS/rndc Service
     ip6tables -A INPUT -p udp -m multiport --dport 67,68,69 -j ACCEPT # DHCP
     ip6tables -A INPUT -p icmpv6 --icmpv6-type echo-reply -j ACCEPT # ping reply
     ip6tables -A INPUT -p icmpv6 --icmpv6-type echo-request -j ACCEPT # ping request
@@ -138,12 +143,12 @@ configure_output_chain() {
 
     # allow outgoing ssh from our network baseline
     iptables -A OUTPUT -p tcp --sport 22 -m conntrack --ctstate ESTABLISHED -j ACCEPT
-    # explicit allow pi-hole outgoing dns requests (netbios, dns, m-dns ...)
-    for ip in ${Q9_DNS_SERVER}
-    do
-        echo "allow DNS lookups (tcp, udp port 53) to q9-server '${ip}'"
-        iptables -A OUTPUT -d "${ip}" -j ACCEPT
-    done
+    # explicit allow pi-hole outgoing dns requests (net-bios, dns, m-dns ...)
+    # for ip in ${Q9_DNS_SERVER}
+    # do
+    #     echo "[ALLOW] DNS lookups (tcp, udp port 53) to q9-server '${ip}'"
+    #     iptables -A OUTPUT -d "${ip}" -j ACCEPT
+    # done
 
     # allow dns/http/https
     iptables -A OUTPUT -p tcp -m tcp --sport 53:65535 --dport 53 -j ACCEPT
@@ -317,7 +322,7 @@ start() {
     configure_input_chain
     configure_forward_chain
     configure_output_chain
-    configure_postrouting
+    configure_post_routing
 
     persist
 }
@@ -338,7 +343,7 @@ case "$1" in
         stop; start
     ;;
     *)
-        echo "usage: $ sudo gatekeeper start|stop|restart"
+        echo "usage: $ sudo gatekeeper status|start|stop|restart"
 esac
 
 exit 0;
