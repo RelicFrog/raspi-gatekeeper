@@ -12,7 +12,7 @@
 # ::   :::   :: ::::   :: ::::   ::   ::: :::   ::       ::   :::  ::::: ::   ::: ::::
 #  :   : :  : :: ::   : :: : :  :     :: :: :   :         :   : :   : :  :    :: :: :
 #
-# gatekeeper firewall control script v1.0.2
+# gatekeeper firewall control script v1.0.3
 #
 #
 # Provides:          iptables
@@ -35,7 +35,7 @@ rf_error () {
 
 init() {
 
-  MY_VERSION="1.0.2"
+  MY_VERSION="1.0.3"
   MY_LOGO=$(cat meta/logo-v1.asc)
   echo -e "${MY_LOGO}\n";
   echo -e "GateKeeper based network access control script v${MY_VERSION} for RaspberryPi(IV)"
@@ -56,10 +56,10 @@ init() {
   MY_SERVER_IP4_WLN_0="$(ip addr show wlan0 | grep 'inet ' | cut -f2 | awk '{ print $2}')"
   MY_SERVER_NETWORK="lo eth0 wlan0"
   MY_HOST_IP4_LOCALS="127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 10.0.0.0/8"
-  MY_LOG_PREFIX_SSH="[gatekeeper/found/SSH] -- "
-  MY_LOG_PREFIX_INP="[gatekeeper/block/INP] -- "
-  MY_LOG_PREFIX_FWD="[gatekeeper/block/OUT] -- "
-  MY_LOG_PREFIX_OUT="[gatekeeper/block/FWD] -- "
+  MY_LOG_PREFIX_SSH="GK3--detect--req--ssh----- : "
+  MY_LOG_PREFIX_INP="GK3--reject--INPUT-------- : "
+  MY_LOG_PREFIX_FWD="GK3--reject--FORWARD------ : "
+  MY_LOG_PREFIX_OUT="GK3--reject--OUTPUT------- : "
   # Q9_DNS_SERVER="9.9.9.9 149.112.112.112"
 
   set -o errexit
